@@ -3986,52 +3986,11 @@ var View = /** @class */ (function (_super) {
     // Triggers handlers to 'select'
     View.prototype.triggerSelect = function (footprint, ev) {
         var dateProfile = this.calendar.footprintToDateProfile(footprint); // abuse of "Event"DateProfile?
-		
-		// EDIT: SUPPORT FOR horizontalSelect
-		// Correct selection
-		var start = dateProfile.start;
-		var end = dateProfile.end;
-		var startTime = start.hour()*3600 + start.minute()*60 + start.seconds();
-		var endTime = end.hour()*3600 + end.minute()*60 + end.seconds();
-		if ((endTime <= startTime && start.valueOf() < end.valueOf()) ||
-			(endTime >= startTime && start.valueOf() > end.valueOf())) {
-				
-			var slotDuration = this.options.slotDuration;
-			start = start.subtract(moment.duration(slotDuration))
-			end = end.add(moment.duration(slotDuration))
-		}
-		
-		// Transform start and end so start always
-		// has the min date and the min time
-		if (start.hour()*3600 + start.minute()*60 + start.seconds() >
-			end.hour()*3600 + end.minute()*60 + end.seconds()) {
-			var tmp = moment.utc(start);
-			start.hour(end.hour())
-				.minute(end.minute())
-				.second(end.second());
-			end.hour(tmp.hour())
-				.minute(tmp.minute())
-				.second(tmp.second());
-		}
-		
-		if (start.year()*10000 + start.month()*100 + start.date() >
-			end.year()*10000 + end.month()*100 + end.date()) {
-			var tmp = moment.utc(start);
-			start.year(end.year())
-				.month(end.month())
-				.date(end.date());
-			end.year(tmp.year())
-				.month(tmp.month())
-				.date(tmp.date());
-		}
-		// EDIT: END OF SUPPORT FOR horizontalSelect
-		
-		
         this.publiclyTrigger('select', {
             context: this,
             args: [
-                start,
-                end,
+                dateProfile.start,
+                dateProfile.end,
                 ev,
                 this
             ]
@@ -11727,50 +11686,6 @@ var TimeGrid = /** @class */ (function (_super) {
                 segs[i].col = segs[i].dayIndex;
             }
         }
-
-		
-		// EDIT: SUPPORT FOR horizontalSelect
-		
-		// If horizontal select is enabled, instead of selecting the
-		// full day, select only the times within those ranges
-		if (this.view.options.horizontalSelect) {
-			var rng = componentFootprint.unzonedRange;
-			var start = moment.utc(rng.startMs);
-			var end = moment.utc(rng.endMs);
-			// Select the start time and the end time
-			var startTime = start.hour()*3600 + start.minute()*60 + start.seconds();
-			var endTime = end.hour()*3600 + end.minute()*60 + end.seconds();
-			if (endTime < startTime) {
-				var tmp=end;
-				end = start;
-				start = tmp;
-			}
-			
-			// Correct selection
-			if ((endTime <= startTime && rng.startMs < rng.endMs) ||
-				(endTime >= startTime && rng.startMs > rng.endMs)) {
-				var slotDuration = this.view.options.slotDuration;
-				start = start.subtract(moment.duration(slotDuration))
-				end = end.add(moment.duration(slotDuration))
-			}
-			
-			// Set the start and end time
-			for (i = 0; i < segs.length; i++) {
-				var startMoment = moment.utc(segs[i].startMs);
-				segs[i].startMs = startMoment.hour(start.hour()).minute(start.minute()).valueOf();
-				segs[i].endMs = moment.utc(segs[i].endMs)
-							.year(startMoment.year())
-							.month(startMoment.month())
-							.date(startMoment.date())
-							.hour(end.hour())
-							.minute(end.minute())
-							.valueOf();
-				segs[i].isStart = true;
-				segs[i].isEnd = true;
-			}
-		}
-		// EDIT: END OF SUPPORT FOR horizontalSelect
-		
         return segs;
     };
     /* Date Handling
@@ -12176,7 +12091,6 @@ var TimeGrid = /** @class */ (function (_super) {
             }
         }
         else {
-			
             for (i = 0; i < eventFootprints.length; i++) {
                 this.renderHighlight(eventFootprints[i].componentFootprint);
             }
